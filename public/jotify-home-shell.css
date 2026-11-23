@@ -1,0 +1,32 @@
+/* Jotify homepage HTML shell: visual-only polish.
+   Flutter's compiled Saavn UI is intentionally not overridden. */
+html{background:#0e1112}
+body{margin:0;background:#0e1112;color:#f4fff7}
+#jotify-yt-nav{
+  background:linear-gradient(160deg,#202627 0%,#161d1b 100%);
+  border-right:1px solid #29342e;
+  border-top:1px solid #283931;
+  box-shadow:inset 3px 0 0 #24d989,0 8px 20px #0004;
+  color:#d0e4d7;
+  transition:background .2s ease,box-shadow .2s ease,color .2s ease;
+}
+#jotify-yt-nav svg{
+  width:25px;height:25px;
+  filter:drop-shadow(0 2px 5px rgba(236,42,60,.24));
+}
+#jotify-yt-nav span{font-size:12px;font-weight:800;letter-spacing:.2px}
+#jotify-yt-nav:hover,#jotify-yt-nav:focus-visible{
+  background:#29382e;
+  color:#7df6b5;
+  box-shadow:inset 3px 0 0 #67f9b3,0 8px 28px #0005;
+}
+#jotify-yt-nav:focus-visible{outline:2px solid #71ffa9;outline-offset:-2px}
+@media(max-width:800px){
+ #jotify-yt-nav{
+   background:linear-gradient(155deg,#25302b,#141c18);
+   border:1px solid #386e4c;
+   border-radius:15px;
+   box-shadow:0 5px 23px #000a;
+ }
+}
+@media(prefers-reduced-motion:reduce){#jotify-yt-nav{transition:none}}
