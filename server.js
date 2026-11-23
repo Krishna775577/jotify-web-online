@@ -127,10 +127,39 @@ async function ytSearch(req, res, url) {
     });
     const body = await upstream.json();
     if (!upstream.ok) {
-      const reason = body?.error?.errors?.[0]?.reason;
-      if (upstream.status === 403 && ['quotaExceeded', 'dailyLimitExceeded'].includes(reason))
-        return respond(res, 429, { status: 'failure', error: 'YouTube API quota exhausted.' });
-      return respond(res, 502, { status: 'failure', error: 'YouTube API is unavailable. Check key and API restrictions in Google Cloud.' });
+      // Google's API can return either legacy errors[].reason or ErrorInfo details[].reason.
+      // These reason codes are safe to log; never log the request URL, API key, or raw body.
+      const detail = Array.isArray(body?.error?.details)
+        ? body.error.details.find(d => typeof d?.reason === 'string')
+        : null;
+      const reason = String(detail?.reason || body?.error?.errors?.[0]?.reason || body?.error?.status || 'unknown');
+      console.warn('[YT search] rejected:', upstream.status, reason, 'kind:', kind);
+      const code = reason.toUpperCase();
+      let message = 'YouTube API request failed. Check Google Cloud API settings.';
+      let httpStatus = 502;
+      if (/QUOTA|DAILYLIMIT|RATE_LIMIT|RATELIMIT/.test(code) || upstream.status === 429) {
+        message = 'YouTube Data API quota exhausted or rate limited. Check Quotas in Google Cloud.';
+        httpStatus = 429;
+      } else if (/ACCESSNOTCONFIGURED|SERVICE_DISABLED|API_DISABLED/.test(code)) {
+        message = 'YouTube Data API v3 is not enabled for this Google Cloud project.';
+        httpStatus = 503;
+      } else if (/REFERRER|REFERER/.test(code)) {
+        message = 'This key allows browser referrers only. Jotify needs a server-side API key in Render.';
+        httpStatus = 403;
+      } else if (/API_KEY_INVALID|KEYINVALID|KEY_EXPIRED|KEYEXPIRED/.test(code)) {
+        message = 'YouTube API key is invalid or expired. Create a new restricted key.';
+        httpStatus = 403;
+      } else if (/API_KEY_SERVICE_BLOCKED|SERVICE_BLOCKED|API_KEY_IP_ADDRESS_BLOCKED|IP_BLOCKED/.test(code)) {
+        message = 'Google Cloud API key application/API restrictions are blocking the Render server.';
+        httpStatus = 403;
+      } else if (upstream.status === 400) {
+        message = 'Google rejected the YouTube search parameters or key.';
+        httpStatus = 400;
+      } else if (upstream.status === 401 || upstream.status === 403) {
+        message = 'Google denied this request. Verify the key, restrictions, and YouTube Data API v3.';
+        httpStatus = 403;
+      }
+      return respond(res, httpStatus, { status: 'failure', error: message, upstreamStatus: upstream.status });
     }
     const items = (Array.isArray(body.items) ? body.items : []).map(item => ({
       kind,
