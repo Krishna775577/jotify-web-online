@@ -3,220 +3,377 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c1410">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta name="theme-color" content="#09130e">
-<title>YT | Jotify</title>
+<title>YT · Jotify</title>
 <style>
-:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
-*{box-sizing:border-box}body{margin:0;background:#080e0b;color:#f4f8f5;min-height:100vh}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 15% 0,rgba(9,155,80,.12),transparent 50%)}
-a{color:inherit}button,input{font:inherit}
-header{position:relative;display:flex;align-items:center;gap:16px;padding:22px clamp(18px,4vw,52px);border-bottom:1px solid #203429;background:#101a15cc}
-.logo{color:#00e780;font-size:24px;font-weight:850;letter-spacing:-1px;text-decoration:none}
-.back{margin-left:auto;text-decoration:none;color:#c9d5ce;border:1px solid #2b4236;padding:10px 16px;border-radius:12px}
-main{position:relative;width:min(1100px,100%);margin:0 auto;padding:30px 20px 60px}
-.pill{display:inline-flex;border:1px solid #72545c;color:#ffcbd1;background:#2a141b;padding:6px 12px;border-radius:100px;font-size:12px;font-weight:700}
-h1{font-size:clamp(34px,5vw,58px);line-height:1.04;letter-spacing:-2px;margin:15px 0 10px}
-.lead{color:#a7b8ac;margin:0 0 28px;max-width:700px;line-height:1.55}
-.panel{background:#111b16;border:1px solid #294136;border-radius:22px;padding:22px;margin:18px 0}
-label{font-size:14px;color:#c9d9cf;display:block;margin-bottom:9px;font-weight:650}
-.inputrow{display:flex;gap:10px;flex-wrap:wrap}
-input{min-width:210px;flex:1;border:1px solid #3b5143;border-radius:12px;background:#19251e;color:#fff;padding:14px;outline:none}
-input:focus{border-color:#00e780;box-shadow:0 0 0 2px #00e78022}
-button,.action{cursor:pointer;border:0;background:#00db75;color:#05190d;border-radius:12px;padding:13px 20px;font-weight:750;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
-button:hover,.action:hover{filter:brightness(1.08)}
-.secondary{background:#25362b;color:#f6fcf8;border:1px solid #3a5744}
-.small{padding:10px 13px;font-size:13px}
-.hint{font-size:13px;color:#9baa9e;margin:12px 0 0;line-height:1.5}
-iframe{border:0}
-.playerwrap{width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;border-radius:17px;border:1px solid #283b31;position:relative}
-#yt-player,#yt-player iframe{width:100%;height:100%;display:block}
-#empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#8da899;padding:16px;pointer-events:none}
-#empty strong{display:block;color:#fff;font-size:26px;margin-bottom:8px}
-#status{min-height:26px;margin-top:14px;font-size:14px;color:#b6c8bc}
-#status.error{color:#ffb9b9}
-.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
-.history{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px}
-.recent{display:flex;gap:10px;align-items:center;text-align:left;background:#1a2a20;color:#f7fff9;border:1px solid #334b3b;padding:10px;border-radius:14px;overflow:hidden}
-.recent img{width:68px;height:44px;object-fit:cover;border-radius:8px}
-.recent span{font-size:12px;overflow-wrap:anywhere}
-.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:18px}
-.search-result{border:1px solid #344c3d;background:#1a2b21;border-radius:14px;padding:8px;color:#f5fff7;cursor:pointer;display:flex;align-items:center;gap:11px;text-align:left;min-height:78px}
-.search-result:hover,.search-result:focus{border-color:#03cc72;background:#243a2b}
-.search-result img{width:96px;height:56px;object-fit:cover;border-radius:9px;background:#18251b;flex:none}
-.search-result span{display:grid;gap:5px;min-width:0}
-.search-result strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.search-result small{color:#9eb2a6;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.search-message{font-size:13px;color:#a7c1b0;margin-top:12px;min-height:18px}
-.meta{font-size:13px;color:#92a899;margin-top:10px}
-.footer{font-size:12px;color:#748f7c;line-height:1.65}
-@media(max-width:640px){header{padding:16px}main{padding:22px 14px 42px}.panel{padding:15px;border-radius:17px}.inputrow>button{flex:1}.back{padding:9px 11px}.playerwrap{border-radius:12px}}
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif;--bg:#090e0b;--panel:#121c15;--panel2:#1b2920;--border:#2d4233;--accent:#11e37e;--muted:#97aa9e}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:#f4fff6;min-height:100vh}
+a{color:inherit;text-decoration:none}
+button,input{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:wait;opacity:.64}
+.hidden{display:none!important}
+.yt-rail{position:fixed;left:0;top:0;bottom:0;width:70px;z-index:20;background:#16221b;border-right:1px solid #213629;display:flex;flex-direction:column;align-items:center}
+.yt-rail .menu{height:85px;width:100%;display:grid;place-content:center;color:#d2e1d7}
+.yt-rail .nav{display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;width:100%;height:76px;font-weight:650;font-size:13px;color:#c4d9c7;border:0;background:transparent}
+.yt-rail .nav:hover,.yt-rail .nav:focus-visible{background:#253e2c;color:#fff}
+.yt-rail .nav.active{color:var(--accent)}
+.yt-rail .nav svg{width:22px;height:22px}
+.yt-rail .nav.home{margin-top:auto}
+.yt-rail .nav:last-child{margin-bottom:auto}
+.shell{margin-left:70px;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:20px;background:#0c160feF;border-bottom:1px solid #1f3425;padding:14px clamp(18px,3vw,36px);backdrop-filter:blur(16px)}
+.brand{font-weight:900;font-size:25px;letter-spacing:-1px;color:var(--accent);white-space:nowrap}
+.brand small{font-size:12px;background:#e72236;border-radius:5px;letter-spacing:0;color:white;padding:3px 6px;margin-left:4px;vertical-align:middle}
+.searchbox{display:flex;gap:10px;flex:1;max-width:820px;margin:0 auto}
+.searchbox input{flex:1;min-width:10px;border-radius:13px;background:#1b2a20;border:1px solid #3d5544;color:#fff;padding:14px 16px;outline:none;font-size:15px}
+.searchbox input:focus{border-color:var(--accent);box-shadow:0 0 0 2px #0ae37f18}
+.searchbox button,.btn{border:0;background:var(--accent);color:#04190b;font-weight:800;padding:12px 20px;border-radius:12px;white-space:nowrap}
+.searchbox button:hover,.btn:hover{filter:brightness(1.08)}
+.backhome{color:#b4cab7;border:1px solid #354d3a;background:#19281c;padding:11px 15px;border-radius:11px;white-space:nowrap;font-size:13px}
+main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
+.hero{border-radius:23px;border:1px solid #254132;background:radial-gradient(ellipse at 0 0,#113720 0,#0a160e 52%,#101b13 100%);padding:30px;display:flex;justify-content:space-between;gap:25px;align-items:center;margin-bottom:26px}
+.hero h1{margin:0;font-size:clamp(28px,4vw,44px);letter-spacing:-1.4px}
+.hero h1 span{color:var(--accent)}
+.hero p{color:#abbdaf;max-width:720px;line-height:1.55;margin:8px 0 0;font-size:14px}
+.hero-icon{font-weight:950;font-size:45px;display:grid;place-content:center;background:#d9293b;width:86px;height:63px;flex:none;border-radius:20px;box-shadow:0 10px 35px #a6243666}
+.chips{display:flex;gap:9px;margin-bottom:15px;flex-wrap:wrap}
+.chip{border-radius:30px;border:1px solid #344b3b;background:#1b2b21;color:#c5d7c9;padding:9px 18px;font-weight:750;font-size:13px}
+.chip[aria-pressed="true"]{color:#001b0a;background:var(--accent);border-color:var(--accent)}
+#status{color:#b4cbb9;min-height:25px;font-size:14px;margin-bottom:16px}
+#status.error{color:#ffb6b6}
+#browse-results{display:grid;gap:26px}
+.section-head{display:flex;align-items:center;gap:10px;margin:0 0 16px}
+.section-head h2{font-size:21px;margin:0;letter-spacing:-.5px}
+.section-head small{color:#94b29c;font-weight:650}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:18px}
+.card{background:transparent;border:0;padding:0;text-align:left;color:#f5fff7;min-width:0}
+.card .thumb{aspect-ratio:16/9;border-radius:14px;display:block;overflow:hidden;background:#17281c;position:relative}
+.card img{width:100%;height:100%;object-fit:cover;transition:transform .2s}
+.card:hover img{transform:scale(1.04)}
+.card .type{position:absolute;right:10px;bottom:9px;padding:4px 8px;background:#000b;border-radius:5px;font-size:11px;font-weight:750}
+.card .meta{display:flex;gap:10px;padding:11px 1px 0}
+.card .avatar{width:32px;height:32px;display:grid;place-content:center;border-radius:50%;color:#77df9a;background:#19412b;flex:none;font-size:15px}
+.card .title{font-weight:700;font-size:14px;line-height:1.42;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card .channel{font-size:12px;color:#9bab9f;margin-top:5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.preset{display:flex;gap:9px;flex-wrap:wrap}
+.preset button{border:1px solid #365440;background:#19291e;color:#d1e9d5;border-radius:20px;padding:9px 14px}
+.empty-state{background:#111c14;padding:28px;border:1px dashed #36563f;border-radius:17px;max-width:800px}
+.empty-state h2{margin:0 0 10px;font-size:21px}
+.empty-state p{color:#a4bdab;font-size:14px;line-height:1.6}
+.watch-back{color:#b8d7c0;display:inline-flex;align-items:center;gap:9px;background:#17231a;border:1px solid #34523d;padding:10px 14px;border-radius:12px;margin-bottom:20px;font-weight:600}
+.watch-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(275px,370px);gap:26px}
+.player-container{aspect-ratio:16/9;background:#000;border-radius:17px;border:1px solid #294434;overflow:hidden;position:relative;width:100%}
+#video-frame{width:100%;height:100%;border:0;display:block}
+.watch-title{font-size:clamp(19px,2.3vw,26px);line-height:1.4;margin:18px 0 5px;font-weight:800}
+.watch-channel{color:#b0c8b6;font-size:14px}
+.watch-actions{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+.watch-actions button,.watch-actions a{background:#223629;border:1px solid #36513d;border-radius:22px;padding:10px 16px;color:#eaffee;font-weight:750;font-size:13px}
+.watch-description{background:#1b2b20;border:1px solid #2d4635;padding:18px;border-radius:14px;font-size:13px;line-height:1.7;color:#bed0c1}
+.watch-description b{color:#fff}
+.related-title{font-size:17px;margin:0 0 16px}
+#related-list{display:grid;gap:14px}
+.related-item{background:transparent;color:inherit;border:0;display:flex;gap:12px;text-align:left;padding:0;align-items:flex-start}
+.related-item img{width:154px;aspect-ratio:16/9;object-fit:cover;border-radius:10px;background:#1b271e;flex:none}
+.related-item .copy{font-size:13px;font-weight:740;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.related-item .artist{font-size:12px;font-weight:400;color:#98ac9b;margin-top:6px}
+.hint{font-size:12px;color:#829b8b;line-height:1.6;margin:16px 0 0}
+#toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:#1d3b29;color:#e6fff0;padding:12px 18px;border-radius:12px;box-shadow:0 10px 35px #000a;z-index:30;display:none}
+.mobilebar{display:none}
+@media(max-width:1050px){.watch-grid{grid-template-columns:1fr}.related-item img{width:136px}#related-list{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}}
+@media(max-width:690px){
+ .yt-rail{display:none}.shell{margin-left:0}
+ .topbar{padding:13px;gap:9px;flex-wrap:wrap}.brand{font-size:23px}.brand small{font-size:11px}
+ .searchbox{order:3;max-width:none;flex-basis:100%}.searchbox input{padding:11px}.searchbox button{padding:9px 15px}
+ .backhome{margin-left:auto;padding:9px 12px}
+ main{padding:15px 13px 98px}.hero{padding:18px;border-radius:15px}.hero-icon{display:none}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+ .card .thumb{border-radius:9px}.card .title{font-size:12px}.card .channel{font-size:11px}
+ .card .avatar{display:none}.section-head h2{font-size:18px}
+ .player-container{border-radius:9px}.watch-grid{gap:22px}.related-item img{width:135px}
+ .mobilebar{display:flex;position:fixed;bottom:0;left:0;right:0;height:68px;z-index:25;justify-content:space-evenly;align-items:center;background:#15221bcc;border-top:1px solid #34503a;backdrop-filter:blur(15px)}
+ .mobilebar a{display:grid;place-content:center;gap:4px;text-align:center;font-weight:750;font-size:12px;color:#a7c5ac}
+ .mobilebar a.active{color:var(--accent)}
+ .mobilebar svg{width:22px;height:22px;margin:auto}
+}
 </style>
 </head>
 <body>
-<header><a class="logo" href="/">Jotify</a><span class="pill">YT PLAYER</span><a class="back" href="/">Back to Saavn ↗</a></header>
-<main>
-<h1>Your music, another way.</h1>
-<p class="lead">YT is a separate YouTube video player inside Jotify. Paste a YouTube or YouTube Music song link to play with the official embedded player. Your Saavn music remains unchanged.</p>
-<section class="panel">
-<label for="song-url">YouTube / YouTube Music song link</label>
-<div class="inputrow">
-<input id="song-url" autocomplete="off" spellcheck="false" placeholder="https://music.youtube.com/watch?v=..." aria-label="YouTube link">
-<button id="play" type="button">▶ Play song</button>
-<button class="secondary" id="paste" type="button">Paste</button>
+<nav class="yt-rail" aria-label="Jotify navigation">
+  <div class="menu" aria-hidden="true">☰</div>
+  <a class="nav home" href="/" aria-label="Jotify Home">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2 10 9h-3v10h-6v-6h-3v6H5V11H2l10-9Z"/></svg><span>Home</span>
+  </a>
+  <a class="nav active" href="/yt.html" aria-current="page" aria-label="YT">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect fill="#ef3543" x="2" y="5" width="20" height="14" rx="4"/><path fill="#fff" d="m10 9 6 3-6 3V9Z"/></svg><span>YT</span>
+  </a>
+</nav>
+<div class="shell">
+  <header class="topbar">
+    <a class="brand" href="/">Jotify <small>YT</small></a>
+    <form class="searchbox" id="search-form" autocomplete="off">
+      <input id="search-input" name="q" type="search" aria-label="Search songs and playlists" placeholder="Search songs, videos, playlists...">
+      <button id="search-button" type="submit">Search</button>
+    </form>
+    <a class="backhome" href="/">Saavn Home</a>
+  </header>
+  <main>
+    <section id="browse">
+      <div class="hero"><div><h1>Discover with <span>YT</span></h1>
+        <p>Search any song or playlist, choose your result, and watch it in a dedicated YouTube-style player. JioSaavn is just one tap away.</p></div><div class="hero-icon" aria-hidden="true">▶</div></div>
+      <div class="chips" aria-label="Filter search results">
+        <button type="button" class="chip" data-filter="all" aria-pressed="true">All</button>
+        <button type="button" class="chip" data-filter="song" aria-pressed="false">Songs &amp; Videos</button>
+        <button type="button" class="chip" data-filter="playlist" aria-pressed="false">Playlists</button>
+      </div>
+      <div id="status" role="status" aria-live="polite"></div>
+      <div id="browse-results"></div>
+      <div id="suggestions" class="empty-state">
+        <h2>What do you want to play?</h2>
+        <p>Search a song or artist, then select a thumbnail. You can also open a whole playlist in the player.</p>
+        <div class="preset">
+          <button type="button" data-query="Radhe Radhe">Radhe Radhe</button>
+          <button type="button" data-query="Tum Mere">Tum Mere</button>
+          <button type="button" data-query="Arijit Singh">Arijit Singh</button>
+          <button type="button" data-query="Krishna Bhajan">Krishna Bhajan</button>
+        </div>
+      </div>
+    </section>
+    <section id="watch" class="hidden" aria-label="YouTube watch page">
+      <button class="watch-back" id="back-results" type="button">← Back to results</button>
+      <div class="watch-grid">
+        <div>
+          <div class="player-container"><iframe id="video-frame" title="Jotify YT player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+          <h1 class="watch-title" id="watch-title">YouTube Video</h1>
+          <div class="watch-channel" id="watch-channel"></div>
+          <div class="watch-actions">
+            <button type="button" id="copy-link">Copy video link</button>
+            <a href="https://www.youtube.com" id="open-youtube" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
+          </div>
+          <p class="watch-description"><b>YT inside Jotify</b> · Play, pause, seek, volume and fullscreen are handled by the official YouTube player. Some videos do not allow embedding; if playback is blocked, use “Open on YouTube”.</p>
+        </div>
+        <aside aria-label="More songs and playlists">
+          <h2 class="related-title">Up next · More from your search</h2>
+          <div id="related-list"></div>
+        </aside>
+      </div>
+    </section>
+    <p class="hint">Powered by YouTube Data API for search and YouTube's official embedded player. This is not a YouTube Music audio-extraction service. Playback availability depends on each video's embedding permissions.</p>
+  </main>
 </div>
-<p class="hint">Supported: youtube.com/watch?v=, music.youtube.com/watch?v=, youtu.be/, youtube.com/shorts/. Not every video permits embedding.</p>
-</section>
-<section class="panel">
-<label for="search">Find a song</label>
-<div class="inputrow">
-<input id="search" placeholder="Song or artist name" aria-label="Song search">
-<button class="secondary" id="search-btn" type="button">Search songs</button>
-<button class="secondary" id="external-search" type="button">YouTube Music ↗</button>
-</div>
-<p class="hint">Search for a song or artist, then tap any result to play using the official YouTube player. Search needs a YouTube Data API key configured privately on the server; some tracks may not allow embedding.</p>
-<div id="search-message" class="search-message" aria-live="polite"></div><div class="results" id="search-results"></div>
-</section>
-<section class="panel">
-<div class="playerwrap">
-<div id="yt-player"></div>
-<div id="empty"><strong>YT is ready</strong><span>Paste a song link above, then press Play.</span></div>
-</div>
-<div role="status" aria-live="polite" id="status">Waiting for a song link.</div>
-<div class="actions">
-<a class="action secondary small" id="youtube-link" href="https://music.youtube.com/" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
-<button class="secondary small" type="button" id="test">Test player</button>
-</div>
-<p class="meta">Playback uses YouTube's official player. On some phones or browsers you may need to tap Play inside the video.</p>
-</section>
-<section class="panel"><strong>Recently played in YT</strong><div class="history" id="recent"></div><p class="hint">Saved only in this browser.</p></section>
-<p class="footer">YT integration is adapted for the web. The uploaded YouTube Music Desktop App uses Electron and cannot be run directly inside a website. Unavailable or embedding-disabled videos must be played on YouTube itself. This page does not extract audio, bypass ads, or provide background-only YouTube Music streams.</p>
-</main>
+<nav class="mobilebar" aria-label="Mobile navigation">
+  <a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2 10 9h-3v10h-6v-6h-3v6H5V11H2l10-9Z"/></svg>Home</a>
+  <a class="active" href="/yt.html" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" fill="#eb293a"/><path fill="#fff" d="m10 9 6 3-6 3V9Z"/></svg>YT</a>
+</nav>
+<div id="toast" role="status" aria-live="polite"></div>
 <script>
-(function () {
-"use strict";
-const input = document.getElementById("song-url");
-const status = document.getElementById("status");
-const empty = document.getElementById("empty");
-const watch = document.getElementById("youtube-link");
-const recentEl = document.getElementById("recent");
-const KEY = "jotify_yt_recent_v1";
-let player = null, playerReady = false, targetId = "", activeId = "";
-function say(message, error) {status.textContent = message; status.className = error ? "error" : "";}
-function validId(str) {return /^[A-Za-z0-9_-]{11}$/.test(str);}
-function parseId(value) {
- const raw = value.trim();
- if (validId(raw)) return raw;
- let url; try {url = new URL(raw);} catch {return null;}
- if (url.protocol !== "https:" && url.protocol !== "http:") return null;
- const hostname = url.hostname.toLowerCase().replace(/^www\./,"");
- let id = null;
- if (hostname === "youtu.be") id = url.pathname.split("/")[1];
- else if (hostname === "youtube.com" || hostname === "music.youtube.com" || hostname === "m.youtube.com" || hostname === "youtube-nocookie.com") {
-  if (url.pathname === "/watch") id = url.searchParams.get("v");
-  else if (url.pathname.startsWith("/shorts/") || url.pathname.startsWith("/live/") || url.pathname.startsWith("/embed/")) id = url.pathname.split("/")[2];
- }
- return validId(id || "") ? id : null;
-}
-function getRecent() {try {let a = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(a) ? a.filter(validId).slice(0,12) : [];}catch{return [];}}
-function save(id) {try {localStorage.setItem(KEY, JSON.stringify([id,...getRecent().filter(x=>x!==id)].slice(0,12)));}catch{} renderRecent();}
-function renderRecent() {
- recentEl.replaceChildren();
- const ids = getRecent();
- if (!ids.length) {let el=document.createElement("span");el.className="hint";el.textContent="Your played songs will appear here.";recentEl.append(el);return;}
- ids.forEach(id=>{
-  const b=document.createElement("button");b.className="recent";b.type="button";
-  const img=document.createElement("img");img.src="https://i.ytimg.com/vi/"+id+"/mqdefault.jpg";img.alt="Video artwork";img.loading="lazy";
-  const label=document.createElement("span");label.textContent="Play again: "+id;
-  b.append(img,label);b.addEventListener("click",()=>{input.value="https://www.youtube.com/watch?v="+id;play(id);});recentEl.append(b);
- });
-}
-function initPlayer() {
- if(player || !window.YT || !YT.Player) return;
- player = new YT.Player("yt-player",{
-  videoId:targetId,width:"100%",height:"100%",
-  playerVars:{playsinline:1,rel:0,origin:location.origin},
-  events:{
-   onReady(event) {
-    playerReady=true;
-    empty.hidden=true;
-    if (activeId !== targetId && targetId) {activeId=targetId;event.target.loadVideoById(targetId);}
-    try {event.target.playVideo();}catch{}
-    say("Player loaded. If it does not start automatically, press Play in the video.");
-   },
-   onStateChange(event) {
-    if(event.data === YT.PlayerState.PLAYING) say("▶ Playing in Jotify YT.");
-    else if(event.data === YT.PlayerState.PAUSED) say("Paused.");
-    else if(event.data === YT.PlayerState.BUFFERING) say("Buffering YouTube video…");
-    else if(event.data === YT.PlayerState.ENDED) say("Finished. Paste another link to continue.");
-   },
-   onError(event) {
-    const code = event.data;
-    if(code===101 || code===150 || code===153) say("YouTube restricted this embedded video (code "+code+"). Try Open on YouTube.",true);
-    else say("YouTube could not play this video (code "+code+"). Try Open on YouTube.",true);
-   }
+(function(){
+  'use strict';
+  const validVideo=id=>/^[A-Za-z0-9_-]{11}$/.test(id||'');
+  const validList=id=>/^[A-Za-z0-9_-]{8,120}$/.test(id||'');
+  const browse=document.getElementById('browse');
+  const watch=document.getElementById('watch');
+  const input=document.getElementById('search-input');
+  const status=document.getElementById('status');
+  const results=document.getElementById('browse-results');
+  const suggestions=document.getElementById('suggestions');
+  const frame=document.getElementById('video-frame');
+  const related=document.getElementById('related-list');
+  const title=document.getElementById('watch-title');
+  const channel=document.getElementById('watch-channel');
+  const external=document.getElementById('open-youtube');
+  const chips=Array.from(document.querySelectorAll('.chip'));
+  const STORAGE='jotify_yt_search_results_v2';
+  let query='', filter='all', songs=[], lists=[], selected=null, ctrl=null, sequence=0, busy=false;
+  function setStatus(s,error){status.textContent=s;status.classList.toggle('error',Boolean(error));}
+  function escUrlItem(item){
+    if(!item || (item.kind==='song'?!validVideo(item.id):item.kind==='playlist'?!validList(item.id):true))return null;
+    return {kind:item.kind,id:item.id,title:String(item.title||'YT music'),channel:String(item.channel||'YouTube'),thumbnail:String(item.thumbnail||'')};
   }
- });
-}
-function play(id) {
- targetId=id;activeId=id;watch.href="https://www.youtube.com/watch?v="+id;input.value="https://www.youtube.com/watch?v="+id;
- save(id);empty.hidden=true;say("Loading YouTube player…");
- if(player && playerReady) {try{player.loadVideoById(id);}catch(e){say("Could not load player: "+e.message,true);} }
- else if(window.YT && YT.Player) initPlayer();
- else say("Loading official YouTube player. It needs an internet connection.");
-}
-document.getElementById("play").addEventListener("click",()=>{const id=parseId(input.value);if(!id){say("Please paste a valid YouTube song/video link.",true);return;}play(id);});
-input.addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("play").click();});
-document.getElementById("paste").addEventListener("click",async()=>{try{input.value=await navigator.clipboard.readText();input.focus();}catch{say("Clipboard permission blocked. Paste your link manually.",true);}});
-const searchInput=document.getElementById("search");
-const searchResults=document.getElementById("search-results");
-const searchMsg=document.getElementById("search-message");
-const searchButton=document.getElementById("search-btn");
-let searchSequence=0;
-async function searchYT(){
- const q=searchInput.value.trim();
- if(q.length<2){searchMsg.textContent="Please enter at least 2 characters.";return;}
- const current=++searchSequence;
- searchButton.disabled=true;searchButton.textContent="Searching…";
- searchResults.replaceChildren();searchMsg.textContent="Searching YouTube…";
- try{
-   const response=await fetch("/api/yt/search?q="+encodeURIComponent(q),{headers:{Accept:"application/json"}});
-   const payload=await response.json();
-   if(current!==searchSequence)return;
-   if(!response.ok || payload.status!=="ok")throw Error(payload.error||"Search unavailable");
-   searchMsg.textContent=payload.items.length?payload.items.length+" videos found. Choose one to play.":"No embeddable videos found. Try a different query.";
-   payload.items.forEach(item=>{
-      if(!validId(item.id))return;
-      const button=document.createElement("button");
-      button.type="button";button.className="search-result";
-      const image=document.createElement("img");
-      image.alt="Song artwork";image.loading="lazy";
-      image.src="https://i.ytimg.com/vi/"+item.id+"/mqdefault.jpg";
-      const info=document.createElement("span");
-      const title=document.createElement("strong");
-      title.textContent=item.title||"Untitled video";
-      const channel=document.createElement("small");
-      channel.textContent=item.channel||"YouTube";
-      info.append(title,channel);button.append(image,info);
-      button.addEventListener("click",()=>{play(item.id);document.getElementById("yt-player").scrollIntoView({behavior:"smooth",block:"center"});});
-      searchResults.append(button);
-   });
- }catch(error){if(current===searchSequence)searchMsg.textContent="Search unavailable: "+error.message;}
- finally{if(current===searchSequence){searchButton.disabled=false;searchButton.textContent="Search songs";}}
-}
-searchButton.addEventListener("click",searchYT);
-document.getElementById("external-search").addEventListener("click",()=>{
- const q=searchInput.value.trim();
- window.open("https://music.youtube.com/search?q="+encodeURIComponent(q),"_blank","noopener,noreferrer");
-});
-document.getElementById("search").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("search-btn").click();});
-document.getElementById("test").addEventListener("click",()=>play("M7lc1UVf-VE"));
-window.onYouTubeIframeAPIReady=function(){if(targetId) initPlayer();};
-const script=document.createElement("script");script.src="https://www.youtube.com/iframe_api";script.async=true;
-script.onerror=()=>say("YouTube player could not load. Check browser blockers or internet connection.",true);
-document.head.appendChild(script);
-renderRecent();
-const params=new URLSearchParams(location.search);const id=parseId(params.get("url")||params.get("v")||"");if(id)play(id);
+  function keep(){
+    try{sessionStorage.setItem(STORAGE,JSON.stringify({query,songs,lists}));}catch{}
+  }
+  function restore(){
+    try{
+      const value=JSON.parse(sessionStorage.getItem(STORAGE)||'null');
+      if(value && typeof value.query==='string'){
+        query=value.query.slice(0,120);
+        songs=Array.isArray(value.songs)?value.songs.map(escUrlItem).filter(Boolean).slice(0,30):[];
+        lists=Array.isArray(value.lists)?value.lists.map(escUrlItem).filter(Boolean).slice(0,30):[];
+      }
+    }catch{}
+  }
+  function setFilter(next){
+    filter=next;chips.forEach(chip=>chip.setAttribute('aria-pressed',String(chip.dataset.filter===next)));
+    renderResults();
+  }
+  function drawCard(item){
+    const btn=document.createElement('button');btn.className='card';btn.type='button';
+    const thumb=document.createElement('span');thumb.className='thumb';
+    const img=document.createElement('img');img.loading='lazy';img.alt='';img.referrerPolicy='no-referrer';
+    const defaultThumb=item.kind==='song'?'https://i.ytimg.com/vi/'+item.id+'/mqdefault.jpg':'';
+    img.src=typeof item.thumbnail==='string' && item.thumbnail.startsWith('https://')?item.thumbnail:defaultThumb;
+    const marker=document.createElement('span');marker.className='type';marker.textContent=item.kind==='playlist'?'PLAYLIST':'VIDEO';
+    thumb.append(img,marker);
+    const meta=document.createElement('span');meta.className='meta';
+    const av=document.createElement('span');av.className='avatar';av.textContent=item.kind==='playlist'?'♫':'▶';
+    const txt=document.createElement('span');
+    const name=document.createElement('span');name.className='title';name.textContent=item.title||'Untitled';
+    const ch=document.createElement('div');ch.className='channel';ch.textContent=item.channel||'YouTube';
+    txt.append(name,ch);meta.append(av,txt);btn.append(thumb,meta);
+    btn.addEventListener('click',()=>openWatch(item,true));
+    return btn;
+  }
+  function drawGroup(kind,items){
+    if(!items.length)return;
+    const group=document.createElement('section');
+    const heading=document.createElement('div');heading.className='section-head';
+    const h=document.createElement('h2');h.textContent=kind==='playlist'?'Playlists':'Songs & Videos';
+    const small=document.createElement('small');small.textContent=items.length+' results';
+    heading.append(h,small);
+    const grid=document.createElement('div');grid.className='cards';
+    items.forEach(item=>grid.append(drawCard(item)));
+    group.append(heading,grid);results.append(group);
+  }
+  function renderResults(){
+    results.replaceChildren();
+    suggestions.classList.toggle('hidden',Boolean(query));
+    if(!query)return;
+    if(filter==='all'||filter==='playlist')drawGroup('playlist',lists);
+    if(filter==='all'||filter==='song')drawGroup('song',songs);
+    if(!busy && !results.childElementCount){
+      const el=document.createElement('div');el.className='empty-state';
+      el.textContent='No results for this search. Try a different song name.';
+      results.append(el);
+    }
+  }
+  function showBrowse(updateHistory){
+    selected=null;watch.classList.add('hidden');browse.classList.remove('hidden');
+    frame.removeAttribute('src');
+    input.value=query;
+    renderResults();
+    if(updateHistory)history.pushState({page:'browse'},'','/yt.html'+(query?'?q='+encodeURIComponent(query):''));
+    document.title='YT · Jotify';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  function videoUrl(item){
+    return item.kind==='playlist'
+      ?'https://www.youtube-nocookie.com/embed/videoseries?list='+encodeURIComponent(item.id)+'&autoplay=1&playsinline=1'
+      :'https://www.youtube-nocookie.com/embed/'+encodeURIComponent(item.id)+'?autoplay=1&playsinline=1&rel=0';
+  }
+  function externalUrl(item){
+    return item.kind==='playlist'
+      ?'https://www.youtube.com/playlist?list='+encodeURIComponent(item.id)
+      :'https://www.youtube.com/watch?v='+encodeURIComponent(item.id);
+  }
+  function drawRelated(){
+    related.replaceChildren();
+    const pool=[...songs,...lists].filter(item=>!(selected && item.id===selected.id)).slice(0,18);
+    if(!pool.length){
+      const p=document.createElement('p');p.className='hint';p.textContent='Search another song to see more suggestions.';related.append(p);return;
+    }
+    pool.forEach(item=>{
+      const btn=document.createElement('button');btn.type='button';btn.className='related-item';
+      const pic=document.createElement('img');pic.loading='lazy';pic.alt='';
+      if(typeof item.thumbnail==='string'&&item.thumbnail.startsWith('https://'))pic.src=item.thumbnail;
+      else if(item.kind==='song')pic.src='https://i.ytimg.com/vi/'+item.id+'/mqdefault.jpg';
+      const txt=document.createElement('span');
+      const cap=document.createElement('span');cap.className='copy';cap.textContent=item.title;
+      const artist=document.createElement('div');artist.className='artist';artist.textContent=(item.kind==='playlist'?'Playlist · ':'Video · ')+item.channel;
+      txt.append(cap,artist);btn.append(pic,txt);
+      btn.addEventListener('click',()=>openWatch(item,true));
+      related.append(btn);
+    });
+  }
+  function openWatch(item,updateHistory){
+    item=escUrlItem(item);if(!item)return;
+    selected=item;
+    browse.classList.add('hidden');watch.classList.remove('hidden');
+    title.textContent=item.title;
+    channel.textContent=(item.kind==='playlist'?'Playlist · ':'Video · ')+item.channel;
+    frame.src=videoUrl(item);
+    external.href=externalUrl(item);
+    document.getElementById('copy-link').textContent=item.kind==='playlist'?'Copy playlist link':'Copy video link';
+    drawRelated();
+    const params=new URLSearchParams();
+    params.set(item.kind==='playlist'?'list':'v',item.id);
+    if(query)params.set('q',query);
+    if(updateHistory)history.pushState({page:'watch',item:item},'','/yt.html?'+params.toString());
+    document.title=item.title+' · Jotify YT';
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  async function runSearch(term,updateHistory){
+    term=(term||'').trim().slice(0,120);
+    if(term.length<2){showBrowse(false);setStatus('Please enter at least 2 characters.',true);return;}
+    if(ctrl)ctrl.abort();
+    ctrl=new AbortController();
+    const current=++sequence;
+    query=term;input.value=term;
+    songs=[];lists=[];busy=true;setFilter('all');
+    showBrowse(false);
+    suggestions.classList.add('hidden');
+    setStatus('Searching songs and playlists…');
+    const go=document.getElementById('search-button');go.disabled=true;
+    if(updateHistory)history.pushState({page:'browse'},'','/yt.html?q='+encodeURIComponent(term));
+    const fetchKind=async kind=>{
+      const res=await fetch('/api/yt/search?kind='+kind+'&q='+encodeURIComponent(term),{signal:ctrl.signal});
+      const payload=await res.json();
+      if(!res.ok || payload.status!=='ok')throw Error(payload.error||'YT search failed');
+      return Array.isArray(payload.items)?payload.items.map(item=>escUrlItem({...item,kind})).filter(Boolean):[];
+    };
+    try{
+      const output=await Promise.allSettled([fetchKind('song'),fetchKind('playlist')]);
+      if(current!==sequence)return;
+      const errors=output.filter(r=>r.status==='rejected').map(r=>r.reason?.message||'Search unavailable');
+      if(output.every(r=>r.status==='rejected'))throw Error(errors[0]||'YT search unavailable');
+      songs=output[0].status==='fulfilled'?output[0].value:[];
+      lists=output[1].status==='fulfilled'?output[1].value:[];
+      keep();
+      setStatus((songs.length+lists.length)+' results for “'+term+'”'+(errors.length?' · '+errors[0]:''));
+    }catch(error){
+      if(current===sequence && error.name!=='AbortError')setStatus('Search unavailable: '+error.message,true);
+    }finally{
+      if(current===sequence){busy=false;go.disabled=false;renderResults();}
+    }
+  }
+  document.getElementById('search-form').addEventListener('submit',event=>{event.preventDefault();runSearch(input.value,true);});
+  chips.forEach(chip=>chip.addEventListener('click',()=>setFilter(chip.dataset.filter)));
+  document.querySelectorAll('[data-query]').forEach(btn=>btn.addEventListener('click',()=>runSearch(btn.dataset.query,true)));
+  document.getElementById('back-results').addEventListener('click',()=>showBrowse(true));
+  document.getElementById('copy-link').addEventListener('click',async()=>{
+    if(!selected)return;
+    try{
+      await navigator.clipboard.writeText(externalUrl(selected));
+      const toast=document.getElementById('toast');toast.textContent='Link copied';toast.style.display='block';setTimeout(()=>toast.style.display='none',1800);
+    }catch{window.prompt('Copy this link:',externalUrl(selected));}
+  });
+  window.addEventListener('popstate',event=>{
+    const params=new URLSearchParams(location.search);
+    const item=event.state?.item;
+    if(item && escUrlItem(item)){openWatch(item,false);return;}
+    const id=params.get('v'),list=params.get('list');
+    if(id && validVideo(id)){openWatch({kind:'song',id,title:'YouTube video',channel:'YouTube'},false);return;}
+    if(list && validList(list)){openWatch({kind:'playlist',id:list,title:'YouTube playlist',channel:'YouTube'},false);return;}
+    query=params.get('q')||query;
+    showBrowse(false);
+  });
+  restore();
+  const p=new URLSearchParams(location.search);
+  const video=p.get('v'),playlist=p.get('list');
+  const initialQuery=(p.get('q')||'').slice(0,120);
+  if(video && validVideo(video) || playlist && validList(playlist)){
+    const id=video&&validVideo(video)?video:playlist;
+    const kind=video&&validVideo(video)?'song':'playlist';
+    const matching=[...songs,...lists].find(x=>x.kind===kind&&x.id===id);
+    openWatch(matching||{kind,id,title:kind==='song'?'YouTube video':'YouTube playlist',channel:'YouTube'},false);
+    if(initialQuery && !query)query=initialQuery;
+  } else if(initialQuery){
+    if(initialQuery===query && (songs.length||lists.length)){input.value=query;setStatus((songs.length+lists.length)+' saved search results');renderResults();}
+    else runSearch(initialQuery,false);
+  } else {showBrowse(false);}
 })();
 </script>
 </body>
