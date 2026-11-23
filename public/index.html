@@ -82,5 +82,19 @@
     </svg>
     <span>YT</span>
   </a>
+  <script>
+  // This Home screen may be embedded by Jotify YT so its video can continue
+  // visibly in a mini-player. Ask the same-origin parent to restore YT in place.
+  (() => {
+    if(window.parent===window)return;
+    const ytNav=document.getElementById('jotify-yt-nav');
+    if(!ytNav)return;
+    ytNav.addEventListener('click',event=>{
+      if(event.button!==0||event.ctrlKey||event.metaKey||event.altKey||event.shiftKey)return;
+      event.preventDefault();
+      window.parent.postMessage({type:'jotify:open-yt'},location.origin);
+    });
+  })();
+  </script>
 </body>
 </html>
