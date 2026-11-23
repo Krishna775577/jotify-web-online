@@ -77,67 +77,76 @@ async function relay(req,res,url) {
 const ytSearchCache = new Map();
 const ytClientLimits = new Map();
 let ytDay = '', ytRequestsToday = 0;
-async function ytSearch(req,res,url) {
-  if(req.method !== 'GET') return respond(res,405,{status:'failure',error:'GET only'});
-  const query = (url.searchParams.get('q') || '').trim();
-  if(query.length < 2 || query.length > 120 || url.search.length > 500)
-    return respond(res,400,{status:'failure',error:'Enter a song or artist (2-120 characters).'});
+async function ytSearch(req, res, url) {
+  if (req.method !== 'GET') return respond(res, 405, { status: 'failure', error: 'GET only' });
+  const q = (url.searchParams.get('q') || '').trim();
+  const kind = url.searchParams.get('kind') || 'song';
+  if (!['song', 'playlist'].includes(kind)) return respond(res, 400, { status: 'failure', error: 'Choose songs or playlists.' });
+  if (q.length < 2 || q.length > 120 || url.search.length > 600)
+    return respond(res, 400, { status: 'failure', error: 'Enter a song or artist (2-120 characters).' });
   const apiKey = process.env.YOUTUBE_API_KEY;
-  if(!apiKey) return respond(res,503,{status:'failure',error:'YT search needs YOUTUBE_API_KEY in Render environment.'});
-  // Cache identical searches to protect YouTube Data API quotas.
-  const cacheKey=query.toLocaleLowerCase('en');
-  const now=Date.now();
-  const cached=ytSearchCache.get(cacheKey);
-  if(cached && cached.expires > now)
-    return respond(res,200,{status:'ok',source:'youtube',cached:true,items:cached.items});
-  const ip=req.socket.remoteAddress || 'unknown';
-  if(ytClientLimits.size > 2000) {
-    for(const [k,v] of ytClientLimits) if(now-v.at>60000) ytClientLimits.delete(k);
+  if (!apiKey) return respond(res, 503, { status: 'failure', error: 'YT search is not configured on the server. Add YOUTUBE_API_KEY in Render Environment.' });
+
+  const cacheKey = kind + ':' + q.toLocaleLowerCase('en');
+  const now = Date.now();
+  const cached = ytSearchCache.get(cacheKey);
+  if (cached && cached.expires > now)
+    return respond(res, 200, { status: 'ok', kind, cached: true, items: cached.items });
+
+  const ip = req.socket.remoteAddress || 'unknown';
+  if (ytClientLimits.size > 1500) {
+    for (const [key, entry] of ytClientLimits) if (now - entry.at > 60000) ytClientLimits.delete(key);
   }
-  let entry=ytClientLimits.get(ip);
-  if(!entry || now-entry.at>60000) entry={at:now,count:0};
+  let entry = ytClientLimits.get(ip);
+  if (!entry || now - entry.at > 60000) entry = { at: now, count: 0 };
   entry.count++;
-  ytClientLimits.set(ip,entry);
-  if(entry.count>6) return respond(res,429,{status:'failure',error:'Too many YT searches. Try again in a minute.'});
-  const today=new Date(now).toISOString().slice(0,10);
-  if(ytDay!==today) {ytDay=today;ytRequestsToday=0;}
-  const maxDaily=Math.max(1,Math.min(1000,Number(process.env.YT_MAX_DAILY_SEARCHES || 60) || 60));
-  if(ytRequestsToday>=maxDaily) return respond(res,429,{status:'failure',error:'YT search daily limit reached. Try tomorrow.'});
+  ytClientLimits.set(ip, entry);
+  if (entry.count > 8) return respond(res, 429, { status: 'failure', error: 'Search limit reached. Try again in a minute.' });
+  const today = new Date(now).toISOString().slice(0, 10);
+  if (ytDay !== today) { ytDay = today; ytRequestsToday = 0; }
+  const maxDaily = Math.max(1, Math.min(90, Number(process.env.YT_MAX_DAILY_SEARCHES || 70) || 70));
+  if (ytRequestsToday >= maxDaily) return respond(res, 429, { status: 'failure', error: 'Daily YT search quota reached. Try later.' });
   ytRequestsToday++;
-  const params=new URLSearchParams({
-    part:'snippet',type:'video',q:query,maxResults:'12',
-    videoEmbeddable:'true',safeSearch:'moderate',key:apiKey
+
+  const params = new URLSearchParams({
+    part: 'snippet',
+    type: kind === 'playlist' ? 'playlist' : 'video',
+    q,
+    maxResults: '20',
+    safeSearch: 'moderate',
+    key: apiKey
   });
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),12000);
+  // YouTube only permits videoEmbeddable with type=video.
+  if (kind === 'song') params.set('videoEmbeddable', 'true');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 12000);
   try {
-    // Never log the URL: it contains the private API key.
-    const upstream=await fetch('https://www.googleapis.com/youtube/v3/search?'+params.toString(),{
-      headers:{Accept:'application/json'},signal:controller.signal
+    // Secret is held on the server. Do not log Google's request URL.
+    const upstream = await fetch('https://www.googleapis.com/youtube/v3/search?' + params.toString(), {
+      headers: { Accept: 'application/json' }, signal: controller.signal
     });
-    const body=await upstream.json();
-    if(!upstream.ok) {
-      const reason=body && body.error && body.error.errors && body.error.errors[0] && body.error.errors[0].reason;
-      if(upstream.status===403 && (reason==='quotaExceeded' || reason==='dailyLimitExceeded'))
-        return respond(res,429,{status:'failure',error:'YouTube search quota exhausted.'});
-      if(upstream.status===400 || upstream.status===403)
-        return respond(res,502,{status:'failure',error:'YouTube API key or API restrictions need checking in Google Cloud.'});
-      return respond(res,502,{status:'failure',error:'YouTube search is temporarily unavailable.'});
+    const body = await upstream.json();
+    if (!upstream.ok) {
+      const reason = body?.error?.errors?.[0]?.reason;
+      if (upstream.status === 403 && ['quotaExceeded', 'dailyLimitExceeded'].includes(reason))
+        return respond(res, 429, { status: 'failure', error: 'YouTube API quota exhausted.' });
+      return respond(res, 502, { status: 'failure', error: 'YouTube API is unavailable. Check key and API restrictions in Google Cloud.' });
     }
-    const items=(Array.isArray(body.items)?body.items:[]).map(item=>({
-      id:item && item.id && item.id.videoId,
-      title:item && item.snippet && item.snippet.title,
-      channel:item && item.snippet && item.snippet.channelTitle,
-      thumbnail:item && item.snippet && item.snippet.thumbnails &&
-        (item.snippet.thumbnails.medium || item.snippet.thumbnails.default || {}).url
-    })).filter(item=>/^[A-Za-z0-9_-]{11}$/.test(item.id||'')).slice(0,12);
-    if(ytSearchCache.size>300) ytSearchCache.clear();
-    ytSearchCache.set(cacheKey,{items,expires:now+15*60*1000});
-    return respond(res,200,{status:'ok',source:'youtube',items});
-  } catch(err) {
-    // Do not leak API keys, query URLs, or upstream error bodies.
-    return respond(res,502,{status:'failure',error:'YT search network error. Try again.'});
-  } finally {clearTimeout(timer);}
+    const items = (Array.isArray(body.items) ? body.items : []).map(item => ({
+      kind,
+      id: kind === 'playlist' ? item?.id?.playlistId : item?.id?.videoId,
+      title: item?.snippet?.title || 'Untitled',
+      channel: item?.snippet?.channelTitle || 'YouTube',
+      thumbnail: (item?.snippet?.thumbnails?.medium || item?.snippet?.thumbnails?.default)?.url || ''
+    })).filter(item => kind === 'song'
+      ? /^[A-Za-z0-9_-]{11}$/.test(item.id || '')
+      : /^[A-Za-z0-9_-]{8,120}$/.test(item.id || '')).slice(0, 20);
+    if (ytSearchCache.size > 300) ytSearchCache.clear();
+    ytSearchCache.set(cacheKey, { expires: now + 15 * 60 * 1000, items });
+    return respond(res, 200, { status: 'ok', kind, items });
+  } catch (error) {
+    return respond(res, 502, { status: 'failure', error: 'YouTube search connection error. Try again.' });
+  } finally { clearTimeout(timer); }
 }
 
 function serveStatic(req,res,url) {
