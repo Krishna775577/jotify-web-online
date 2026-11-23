@@ -101,6 +101,7 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
 }
 </style>
 <link rel="stylesheet" href="/jotify-studio-theme.css?v=1">
+<link rel="stylesheet" href="/jotify-miniplayer.css?v=1">
 </head>
 <body>
 <nav class="yt-rail" aria-label="Jotify navigation">
@@ -147,11 +148,12 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
       <button class="watch-back" id="back-results" type="button">← Back to results</button>
       <div class="watch-grid">
         <div>
-          <div class="player-container"><iframe id="video-frame" title="Jotify YT player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
+          <div class="player-container"><iframe id="video-frame" title="Jotify YT player" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
           <h1 class="watch-title" id="watch-title">YouTube Video</h1>
           <div class="watch-channel" id="watch-channel"></div>
           <div class="watch-actions">
             <button type="button" id="copy-link">Copy video link</button>
+            <button type="button" id="landscape-fullscreen">⛶ Fullscreen / Landscape</button>
             <a href="https://www.youtube.com" id="open-youtube" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
           </div>
           <p class="watch-description"><b>YT inside Jotify</b> · Play, pause, seek, volume and fullscreen are handled by the official YouTube player. Some videos do not allow embedding; if playback is blocked, use “Open on YouTube”.</p>
@@ -169,6 +171,14 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
   <a href="/"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="m12 2 10 9h-3v10h-6v-6h-3v6H5V11H2l10-9Z"/></svg>Home</a>
   <a class="active" href="/yt.html" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" fill="#eb293a"/><path fill="#fff" d="m10 9 6 3-6 3V9Z"/></svg>YT</a>
 </nav>
+<div id="jyt-home-dock" aria-label="Jotify Home while YouTube mini-player stays visible">
+  <iframe id="jyt-home-frame" title="Jotify Saavn Home" allow="autoplay; clipboard-write" loading="lazy"></iframe>
+</div>
+<div id="jyt-mini-controls" class="hidden" role="group" aria-label="YouTube mini-player controls">
+  <span id="jyt-mini-title">YouTube</span>
+  <button id="jyt-mini-expand" type="button" title="Return to YouTube video">⤢ Expand</button>
+  <button id="jyt-mini-close" type="button" title="Stop video and close mini-player">✕</button>
+</div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script>
 (function(){
@@ -182,6 +192,12 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
   const results=document.getElementById('browse-results');
   const suggestions=document.getElementById('suggestions');
   const frame=document.getElementById('video-frame');
+  const homeDock=document.getElementById('jyt-home-dock');
+  const homeFrame=document.getElementById('jyt-home-frame');
+  const miniControls=document.getElementById('jyt-mini-controls');
+  const miniTitle=document.getElementById('jyt-mini-title');
+  const playerContainer=document.querySelector('.player-container');
+  let landscapeLocked=false;
   const related=document.getElementById('related-list');
   const title=document.getElementById('watch-title');
   const channel=document.getElementById('watch-channel');
@@ -252,6 +268,8 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
     }
   }
   function showBrowse(updateHistory){
+    document.body.classList.remove('jyt-home-mode');
+    miniControls.classList.add('hidden');
     selected=null;watch.classList.add('hidden');browse.classList.remove('hidden');
     frame.removeAttribute('src');
     input.value=query;
@@ -291,11 +309,15 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
   }
   function openWatch(item,updateHistory){
     item=escUrlItem(item);if(!item)return;
+    const nextURL=videoUrl(item);
+    document.body.classList.remove('jyt-home-mode');
+    miniControls.classList.add('hidden');
     selected=item;
     browse.classList.add('hidden');watch.classList.remove('hidden');
     title.textContent=item.title;
     channel.textContent=(item.kind==='playlist'?'Playlist · ':'Video · ')+item.channel;
-    frame.src=videoUrl(item);
+    // Keep exactly the same official YouTube iframe loaded when expanding from Home.
+    if(frame.getAttribute('src')!==nextURL)frame.src=nextURL;
     external.href=externalUrl(item);
     document.getElementById('copy-link').textContent=item.kind==='playlist'?'Copy playlist link':'Copy video link';
     drawRelated();
@@ -340,6 +362,86 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
       if(current===sequence){busy=false;go.disabled=false;renderResults();}
     }
   }
+  // Render the Saavn Home within this persistent page rather than navigating
+  // the top-level document. The official YouTube iframe stays visible in a mini box.
+  function layoutMini(){
+    if(!document.body.classList.contains('jyt-home-mode'))return;
+    const width=Math.min(360,Math.max(200,window.innerWidth-24));
+    const bottom=window.innerWidth<690?84:24;
+    document.documentElement.style.setProperty('--mini-bottom',bottom+'px');
+    miniControls.style.width=width+'px';
+    miniControls.style.bottom=(bottom+width*9/16)+'px';
+  }
+  function showHome(updateHistory){
+    if(!selected || !frame.getAttribute('src')){window.location.assign('/');return;}
+    watch.classList.remove('hidden');
+    document.body.classList.add('jyt-home-mode');
+    miniControls.classList.remove('hidden');
+    miniTitle.textContent=selected.title;
+    if(!homeFrame.getAttribute('src'))homeFrame.setAttribute('src','/');
+    layoutMini();
+    if(updateHistory)history.pushState({page:'home',item:selected},'','/');
+    document.title='Home · Jotify (YT mini-player)';
+  }
+  function returnYT(){
+    if(selected && frame.getAttribute('src'))openWatch(selected,true);
+    else showBrowse(true);
+  }
+  // These are the Home links in YT's sidebar, header, and mobile nav.
+  // Preserve normal navigation when no YouTube video is selected.
+  document.querySelectorAll('a[href="/"]').forEach(link=>{
+    link.addEventListener('click',event=>{
+      if(!selected || event.button!==0 || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey)return;
+      event.preventDefault();showHome(true);
+    });
+  });
+  // The same-origin Flutter Home iframe sends this when its YT nav is tapped.
+  window.addEventListener('message',event=>{
+    if(event.origin!==location.origin || event.source!==homeFrame.contentWindow)return;
+    if(event.data && event.data.type==='jotify:open-yt')returnYT();
+  });
+  window.addEventListener('resize',layoutMini);
+  document.getElementById('jyt-mini-expand').addEventListener('click',returnYT);
+  document.getElementById('jyt-mini-close').addEventListener('click',()=>{
+    // Stop deliberately; never play a hidden YouTube video.
+    frame.removeAttribute('src');
+    selected=null;
+    miniControls.classList.add('hidden');
+    watch.classList.add('hidden');
+    history.replaceState({page:'home'},'','/');
+    document.title='Home · Jotify';
+  });
+  // Fullscreen is user initiated. Landscape lock requires mobile/browser support.
+  document.getElementById('landscape-fullscreen').addEventListener('click',async()=>{
+    if(!selected)return;
+    if(document.fullscreenElement){
+      try{await document.exitFullscreen();}catch{}
+      return;
+    }
+    try{
+      if(playerContainer.requestFullscreen)await playerContainer.requestFullscreen();
+      else if(playerContainer.webkitRequestFullscreen)playerContainer.webkitRequestFullscreen();
+      else throw new Error('Fullscreen is not available in this browser');
+    }catch(err){
+      setStatus('Fullscreen is unavailable here. Try the fullscreen button inside the YouTube player.',true);
+      return;
+    }
+    try{
+      if(screen.orientation && typeof screen.orientation.lock==='function'){
+        await screen.orientation.lock('landscape');
+        landscapeLocked=true;
+      }
+    }catch{
+      // A browser may permit fullscreen but not orientation lock.
+      // Rotating the phone manually still works.
+    }
+  });
+  document.addEventListener('fullscreenchange',()=>{
+    if(!document.fullscreenElement && landscapeLocked){
+      landscapeLocked=false;
+      try{screen.orientation.unlock();}catch{}
+    }
+  });
   document.getElementById('search-form').addEventListener('submit',event=>{event.preventDefault();runSearch(input.value,true);});
   chips.forEach(chip=>chip.addEventListener('click',()=>setFilter(chip.dataset.filter)));
   document.querySelectorAll('[data-query]').forEach(btn=>btn.addEventListener('click',()=>runSearch(btn.dataset.query,true)));
@@ -352,6 +454,7 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
     }catch{window.prompt('Copy this link:',externalUrl(selected));}
   });
   window.addEventListener('popstate',event=>{
+    if(location.pathname==='/' && selected && frame.getAttribute('src')){showHome(false);return;}
     const params=new URLSearchParams(location.search);
     const item=event.state?.item;
     if(item && escUrlItem(item)){openWatch(item,false);return;}
