@@ -1,0 +1,8 @@
+{
+  "name": "jotify-web-render",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Jotify Flutter Web static site and catalog relay",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server.js" }
+}
