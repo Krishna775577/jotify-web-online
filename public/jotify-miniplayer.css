@@ -52,6 +52,7 @@ body.jyt-home-mode #jyt-mini-controls:not(.hidden){display:flex}
 }
 #landscape-fullscreen{display:inline-flex;align-items:center;gap:7px}
 @media(max-width:690px){
+  body.jyt-home-mode #video-frame{height:200px!important;aspect-ratio:auto!important}
   #jyt-mini-controls{font-size:11px}
   #jyt-mini-controls button{font-size:11px;padding:7px 8px}
 }
