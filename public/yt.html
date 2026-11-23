@@ -40,6 +40,14 @@ iframe{border:0}
 .recent{display:flex;gap:10px;align-items:center;text-align:left;background:#1a2a20;color:#f7fff9;border:1px solid #334b3b;padding:10px;border-radius:14px;overflow:hidden}
 .recent img{width:68px;height:44px;object-fit:cover;border-radius:8px}
 .recent span{font-size:12px;overflow-wrap:anywhere}
+.results{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:18px}
+.search-result{border:1px solid #344c3d;background:#1a2b21;border-radius:14px;padding:8px;color:#f5fff7;cursor:pointer;display:flex;align-items:center;gap:11px;text-align:left;min-height:78px}
+.search-result:hover,.search-result:focus{border-color:#03cc72;background:#243a2b}
+.search-result img{width:96px;height:56px;object-fit:cover;border-radius:9px;background:#18251b;flex:none}
+.search-result span{display:grid;gap:5px;min-width:0}
+.search-result strong{font-size:13px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.search-result small{color:#9eb2a6;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.search-message{font-size:13px;color:#a7c1b0;margin-top:12px;min-height:18px}
 .meta{font-size:13px;color:#92a899;margin-top:10px}
 .footer{font-size:12px;color:#748f7c;line-height:1.65}
 @media(max-width:640px){header{padding:16px}main{padding:22px 14px 42px}.panel{padding:15px;border-radius:17px}.inputrow>button{flex:1}.back{padding:9px 11px}.playerwrap{border-radius:12px}}
@@ -63,9 +71,11 @@ iframe{border:0}
 <label for="search">Find a song</label>
 <div class="inputrow">
 <input id="search" placeholder="Song or artist name" aria-label="Song search">
-<button class="secondary" id="search-btn" type="button">Search on YouTube Music ↗</button>
+<button class="secondary" id="search-btn" type="button">Search songs</button>
+<button class="secondary" id="external-search" type="button">YouTube Music ↗</button>
 </div>
-<p class="hint">Search opens the official YouTube Music website in a new tab. Choose a track, copy its Share link, then paste it above. In-site keyword results require separate YouTube Data API credentials.</p>
+<p class="hint">Search for a song or artist, then tap any result to play using the official YouTube player. Search needs a YouTube Data API key configured privately on the server; some tracks may not allow embedding.</p>
+<div id="search-message" class="search-message" aria-live="polite"></div><div class="results" id="search-results"></div>
 </section>
 <section class="panel">
 <div class="playerwrap">
@@ -158,9 +168,45 @@ function play(id) {
 document.getElementById("play").addEventListener("click",()=>{const id=parseId(input.value);if(!id){say("Please paste a valid YouTube song/video link.",true);return;}play(id);});
 input.addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("play").click();});
 document.getElementById("paste").addEventListener("click",async()=>{try{input.value=await navigator.clipboard.readText();input.focus();}catch{say("Clipboard permission blocked. Paste your link manually.",true);}});
-document.getElementById("search-btn").addEventListener("click",()=>{
- const q=document.getElementById("search").value.trim();
- if(!q){say("Enter a song or artist to search.",true);return;}
+const searchInput=document.getElementById("search");
+const searchResults=document.getElementById("search-results");
+const searchMsg=document.getElementById("search-message");
+const searchButton=document.getElementById("search-btn");
+let searchSequence=0;
+async function searchYT(){
+ const q=searchInput.value.trim();
+ if(q.length<2){searchMsg.textContent="Please enter at least 2 characters.";return;}
+ const current=++searchSequence;
+ searchButton.disabled=true;searchButton.textContent="Searching…";
+ searchResults.replaceChildren();searchMsg.textContent="Searching YouTube…";
+ try{
+   const response=await fetch("/api/yt/search?q="+encodeURIComponent(q),{headers:{Accept:"application/json"}});
+   const payload=await response.json();
+   if(current!==searchSequence)return;
+   if(!response.ok || payload.status!=="ok")throw Error(payload.error||"Search unavailable");
+   searchMsg.textContent=payload.items.length?payload.items.length+" videos found. Choose one to play.":"No embeddable videos found. Try a different query.";
+   payload.items.forEach(item=>{
+      if(!validId(item.id))return;
+      const button=document.createElement("button");
+      button.type="button";button.className="search-result";
+      const image=document.createElement("img");
+      image.alt="Song artwork";image.loading="lazy";
+      image.src="https://i.ytimg.com/vi/"+item.id+"/mqdefault.jpg";
+      const info=document.createElement("span");
+      const title=document.createElement("strong");
+      title.textContent=item.title||"Untitled video";
+      const channel=document.createElement("small");
+      channel.textContent=item.channel||"YouTube";
+      info.append(title,channel);button.append(image,info);
+      button.addEventListener("click",()=>{play(item.id);document.getElementById("yt-player").scrollIntoView({behavior:"smooth",block:"center"});});
+      searchResults.append(button);
+   });
+ }catch(error){if(current===searchSequence)searchMsg.textContent="Search unavailable: "+error.message;}
+ finally{if(current===searchSequence){searchButton.disabled=false;searchButton.textContent="Search songs";}}
+}
+searchButton.addEventListener("click",searchYT);
+document.getElementById("external-search").addEventListener("click",()=>{
+ const q=searchInput.value.trim();
  window.open("https://music.youtube.com/search?q="+encodeURIComponent(q),"_blank","noopener,noreferrer");
 });
 document.getElementById("search").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("search-btn").click();});
