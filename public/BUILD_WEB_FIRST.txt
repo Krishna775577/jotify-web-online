@@ -1,1 +1,0 @@
-Run build_jotify_render.bat from C:\JotifyWeb to populate this folder. Remove this text file after building.
