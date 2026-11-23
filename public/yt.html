@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#09130e">
+<title>YT | Jotify</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:#080e0b;color:#f4f8f5;min-height:100vh}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 15% 0,rgba(9,155,80,.12),transparent 50%)}
+a{color:inherit}button,input{font:inherit}
+header{position:relative;display:flex;align-items:center;gap:16px;padding:22px clamp(18px,4vw,52px);border-bottom:1px solid #203429;background:#101a15cc}
+.logo{color:#00e780;font-size:24px;font-weight:850;letter-spacing:-1px;text-decoration:none}
+.back{margin-left:auto;text-decoration:none;color:#c9d5ce;border:1px solid #2b4236;padding:10px 16px;border-radius:12px}
+main{position:relative;width:min(1100px,100%);margin:0 auto;padding:30px 20px 60px}
+.pill{display:inline-flex;border:1px solid #72545c;color:#ffcbd1;background:#2a141b;padding:6px 12px;border-radius:100px;font-size:12px;font-weight:700}
+h1{font-size:clamp(34px,5vw,58px);line-height:1.04;letter-spacing:-2px;margin:15px 0 10px}
+.lead{color:#a7b8ac;margin:0 0 28px;max-width:700px;line-height:1.55}
+.panel{background:#111b16;border:1px solid #294136;border-radius:22px;padding:22px;margin:18px 0}
+label{font-size:14px;color:#c9d9cf;display:block;margin-bottom:9px;font-weight:650}
+.inputrow{display:flex;gap:10px;flex-wrap:wrap}
+input{min-width:210px;flex:1;border:1px solid #3b5143;border-radius:12px;background:#19251e;color:#fff;padding:14px;outline:none}
+input:focus{border-color:#00e780;box-shadow:0 0 0 2px #00e78022}
+button,.action{cursor:pointer;border:0;background:#00db75;color:#05190d;border-radius:12px;padding:13px 20px;font-weight:750;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+button:hover,.action:hover{filter:brightness(1.08)}
+.secondary{background:#25362b;color:#f6fcf8;border:1px solid #3a5744}
+.small{padding:10px 13px;font-size:13px}
+.hint{font-size:13px;color:#9baa9e;margin:12px 0 0;line-height:1.5}
+iframe{border:0}
+.playerwrap{width:100%;aspect-ratio:16/9;background:#000;overflow:hidden;border-radius:17px;border:1px solid #283b31;position:relative}
+#yt-player,#yt-player iframe{width:100%;height:100%;display:block}
+#empty{position:absolute;inset:0;display:grid;place-content:center;text-align:center;color:#8da899;padding:16px;pointer-events:none}
+#empty strong{display:block;color:#fff;font-size:26px;margin-bottom:8px}
+#status{min-height:26px;margin-top:14px;font-size:14px;color:#b6c8bc}
+#status.error{color:#ffb9b9}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+.history{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-top:16px}
+.recent{display:flex;gap:10px;align-items:center;text-align:left;background:#1a2a20;color:#f7fff9;border:1px solid #334b3b;padding:10px;border-radius:14px;overflow:hidden}
+.recent img{width:68px;height:44px;object-fit:cover;border-radius:8px}
+.recent span{font-size:12px;overflow-wrap:anywhere}
+.meta{font-size:13px;color:#92a899;margin-top:10px}
+.footer{font-size:12px;color:#748f7c;line-height:1.65}
+@media(max-width:640px){header{padding:16px}main{padding:22px 14px 42px}.panel{padding:15px;border-radius:17px}.inputrow>button{flex:1}.back{padding:9px 11px}.playerwrap{border-radius:12px}}
+</style>
+</head>
+<body>
+<header><a class="logo" href="/">Jotify</a><span class="pill">YT PLAYER</span><a class="back" href="/">Back to Saavn ↗</a></header>
+<main>
+<h1>Your music, another way.</h1>
+<p class="lead">YT is a separate YouTube video player inside Jotify. Paste a YouTube or YouTube Music song link to play with the official embedded player. Your Saavn music remains unchanged.</p>
+<section class="panel">
+<label for="song-url">YouTube / YouTube Music song link</label>
+<div class="inputrow">
+<input id="song-url" autocomplete="off" spellcheck="false" placeholder="https://music.youtube.com/watch?v=..." aria-label="YouTube link">
+<button id="play" type="button">▶ Play song</button>
+<button class="secondary" id="paste" type="button">Paste</button>
+</div>
+<p class="hint">Supported: youtube.com/watch?v=, music.youtube.com/watch?v=, youtu.be/, youtube.com/shorts/. Not every video permits embedding.</p>
+</section>
+<section class="panel">
+<label for="search">Find a song</label>
+<div class="inputrow">
+<input id="search" placeholder="Song or artist name" aria-label="Song search">
+<button class="secondary" id="search-btn" type="button">Search on YouTube Music ↗</button>
+</div>
+<p class="hint">Search opens the official YouTube Music website in a new tab. Choose a track, copy its Share link, then paste it above. In-site keyword results require separate YouTube Data API credentials.</p>
+</section>
+<section class="panel">
+<div class="playerwrap">
+<div id="yt-player"></div>
+<div id="empty"><strong>YT is ready</strong><span>Paste a song link above, then press Play.</span></div>
+</div>
+<div role="status" aria-live="polite" id="status">Waiting for a song link.</div>
+<div class="actions">
+<a class="action secondary small" id="youtube-link" href="https://music.youtube.com/" target="_blank" rel="noopener noreferrer">Open on YouTube ↗</a>
+<button class="secondary small" type="button" id="test">Test player</button>
+</div>
+<p class="meta">Playback uses YouTube's official player. On some phones or browsers you may need to tap Play inside the video.</p>
+</section>
+<section class="panel"><strong>Recently played in YT</strong><div class="history" id="recent"></div><p class="hint">Saved only in this browser.</p></section>
+<p class="footer">YT integration is adapted for the web. The uploaded YouTube Music Desktop App uses Electron and cannot be run directly inside a website. Unavailable or embedding-disabled videos must be played on YouTube itself. This page does not extract audio, bypass ads, or provide background-only YouTube Music streams.</p>
+</main>
+<script>
+(function () {
+"use strict";
+const input = document.getElementById("song-url");
+const status = document.getElementById("status");
+const empty = document.getElementById("empty");
+const watch = document.getElementById("youtube-link");
+const recentEl = document.getElementById("recent");
+const KEY = "jotify_yt_recent_v1";
+let player = null, playerReady = false, targetId = "", activeId = "";
+function say(message, error) {status.textContent = message; status.className = error ? "error" : "";}
+function validId(str) {return /^[A-Za-z0-9_-]{11}$/.test(str);}
+function parseId(value) {
+ const raw = value.trim();
+ if (validId(raw)) return raw;
+ let url; try {url = new URL(raw);} catch {return null;}
+ if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+ const hostname = url.hostname.toLowerCase().replace(/^www\./,"");
+ let id = null;
+ if (hostname === "youtu.be") id = url.pathname.split("/")[1];
+ else if (hostname === "youtube.com" || hostname === "music.youtube.com" || hostname === "m.youtube.com" || hostname === "youtube-nocookie.com") {
+  if (url.pathname === "/watch") id = url.searchParams.get("v");
+  else if (url.pathname.startsWith("/shorts/") || url.pathname.startsWith("/live/") || url.pathname.startsWith("/embed/")) id = url.pathname.split("/")[2];
+ }
+ return validId(id || "") ? id : null;
+}
+function getRecent() {try {let a = JSON.parse(localStorage.getItem(KEY) || "[]"); return Array.isArray(a) ? a.filter(validId).slice(0,12) : [];}catch{return [];}}
+function save(id) {try {localStorage.setItem(KEY, JSON.stringify([id,...getRecent().filter(x=>x!==id)].slice(0,12)));}catch{} renderRecent();}
+function renderRecent() {
+ recentEl.replaceChildren();
+ const ids = getRecent();
+ if (!ids.length) {let el=document.createElement("span");el.className="hint";el.textContent="Your played songs will appear here.";recentEl.append(el);return;}
+ ids.forEach(id=>{
+  const b=document.createElement("button");b.className="recent";b.type="button";
+  const img=document.createElement("img");img.src="https://i.ytimg.com/vi/"+id+"/mqdefault.jpg";img.alt="Video artwork";img.loading="lazy";
+  const label=document.createElement("span");label.textContent="Play again: "+id;
+  b.append(img,label);b.addEventListener("click",()=>{input.value="https://www.youtube.com/watch?v="+id;play(id);});recentEl.append(b);
+ });
+}
+function initPlayer() {
+ if(player || !window.YT || !YT.Player) return;
+ player = new YT.Player("yt-player",{
+  videoId:targetId,width:"100%",height:"100%",
+  playerVars:{playsinline:1,rel:0,origin:location.origin},
+  events:{
+   onReady(event) {
+    playerReady=true;
+    empty.hidden=true;
+    if (activeId !== targetId && targetId) {activeId=targetId;event.target.loadVideoById(targetId);}
+    try {event.target.playVideo();}catch{}
+    say("Player loaded. If it does not start automatically, press Play in the video.");
+   },
+   onStateChange(event) {
+    if(event.data === YT.PlayerState.PLAYING) say("▶ Playing in Jotify YT.");
+    else if(event.data === YT.PlayerState.PAUSED) say("Paused.");
+    else if(event.data === YT.PlayerState.BUFFERING) say("Buffering YouTube video…");
+    else if(event.data === YT.PlayerState.ENDED) say("Finished. Paste another link to continue.");
+   },
+   onError(event) {
+    const code = event.data;
+    if(code===101 || code===150 || code===153) say("YouTube restricted this embedded video (code "+code+"). Try Open on YouTube.",true);
+    else say("YouTube could not play this video (code "+code+"). Try Open on YouTube.",true);
+   }
+  }
+ });
+}
+function play(id) {
+ targetId=id;activeId=id;watch.href="https://www.youtube.com/watch?v="+id;input.value="https://www.youtube.com/watch?v="+id;
+ save(id);empty.hidden=true;say("Loading YouTube player…");
+ if(player && playerReady) {try{player.loadVideoById(id);}catch(e){say("Could not load player: "+e.message,true);} }
+ else if(window.YT && YT.Player) initPlayer();
+ else say("Loading official YouTube player. It needs an internet connection.");
+}
+document.getElementById("play").addEventListener("click",()=>{const id=parseId(input.value);if(!id){say("Please paste a valid YouTube song/video link.",true);return;}play(id);});
+input.addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("play").click();});
+document.getElementById("paste").addEventListener("click",async()=>{try{input.value=await navigator.clipboard.readText();input.focus();}catch{say("Clipboard permission blocked. Paste your link manually.",true);}});
+document.getElementById("search-btn").addEventListener("click",()=>{
+ const q=document.getElementById("search").value.trim();
+ if(!q){say("Enter a song or artist to search.",true);return;}
+ window.open("https://music.youtube.com/search?q="+encodeURIComponent(q),"_blank","noopener,noreferrer");
+});
+document.getElementById("search").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("search-btn").click();});
+document.getElementById("test").addEventListener("click",()=>play("M7lc1UVf-VE"));
+window.onYouTubeIframeAPIReady=function(){if(targetId) initPlayer();};
+const script=document.createElement("script");script.src="https://www.youtube.com/iframe_api";script.async=true;
+script.onerror=()=>say("YouTube player could not load. Check browser blockers or internet connection.",true);
+document.head.appendChild(script);
+renderRecent();
+const params=new URLSearchParams(location.search);const id=parseId(params.get("url")||params.get("v")||"");if(id)play(id);
+})();
+</script>
+</body>
+</html>
