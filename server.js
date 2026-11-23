@@ -73,6 +73,73 @@ async function relay(req,res,url) {
     respond(res,502,{status:'failure',error:'Music service unavailable'});
   } finally {clearTimeout(timer);}
 }
+
+const ytSearchCache = new Map();
+const ytClientLimits = new Map();
+let ytDay = '', ytRequestsToday = 0;
+async function ytSearch(req,res,url) {
+  if(req.method !== 'GET') return respond(res,405,{status:'failure',error:'GET only'});
+  const query = (url.searchParams.get('q') || '').trim();
+  if(query.length < 2 || query.length > 120 || url.search.length > 500)
+    return respond(res,400,{status:'failure',error:'Enter a song or artist (2-120 characters).'});
+  const apiKey = process.env.YOUTUBE_API_KEY;
+  if(!apiKey) return respond(res,503,{status:'failure',error:'YT search needs YOUTUBE_API_KEY in Render environment.'});
+  // Cache identical searches to protect YouTube Data API quotas.
+  const cacheKey=query.toLocaleLowerCase('en');
+  const now=Date.now();
+  const cached=ytSearchCache.get(cacheKey);
+  if(cached && cached.expires > now)
+    return respond(res,200,{status:'ok',source:'youtube',cached:true,items:cached.items});
+  const ip=req.socket.remoteAddress || 'unknown';
+  if(ytClientLimits.size > 2000) {
+    for(const [k,v] of ytClientLimits) if(now-v.at>60000) ytClientLimits.delete(k);
+  }
+  let entry=ytClientLimits.get(ip);
+  if(!entry || now-entry.at>60000) entry={at:now,count:0};
+  entry.count++;
+  ytClientLimits.set(ip,entry);
+  if(entry.count>6) return respond(res,429,{status:'failure',error:'Too many YT searches. Try again in a minute.'});
+  const today=new Date(now).toISOString().slice(0,10);
+  if(ytDay!==today) {ytDay=today;ytRequestsToday=0;}
+  const maxDaily=Math.max(1,Math.min(1000,Number(process.env.YT_MAX_DAILY_SEARCHES || 60) || 60));
+  if(ytRequestsToday>=maxDaily) return respond(res,429,{status:'failure',error:'YT search daily limit reached. Try tomorrow.'});
+  ytRequestsToday++;
+  const params=new URLSearchParams({
+    part:'snippet',type:'video',q:query,maxResults:'12',
+    videoEmbeddable:'true',safeSearch:'moderate',key:apiKey
+  });
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),12000);
+  try {
+    // Never log the URL: it contains the private API key.
+    const upstream=await fetch('https://www.googleapis.com/youtube/v3/search?'+params.toString(),{
+      headers:{Accept:'application/json'},signal:controller.signal
+    });
+    const body=await upstream.json();
+    if(!upstream.ok) {
+      const reason=body && body.error && body.error.errors && body.error.errors[0] && body.error.errors[0].reason;
+      if(upstream.status===403 && (reason==='quotaExceeded' || reason==='dailyLimitExceeded'))
+        return respond(res,429,{status:'failure',error:'YouTube search quota exhausted.'});
+      if(upstream.status===400 || upstream.status===403)
+        return respond(res,502,{status:'failure',error:'YouTube API key or API restrictions need checking in Google Cloud.'});
+      return respond(res,502,{status:'failure',error:'YouTube search is temporarily unavailable.'});
+    }
+    const items=(Array.isArray(body.items)?body.items:[]).map(item=>({
+      id:item && item.id && item.id.videoId,
+      title:item && item.snippet && item.snippet.title,
+      channel:item && item.snippet && item.snippet.channelTitle,
+      thumbnail:item && item.snippet && item.snippet.thumbnails &&
+        (item.snippet.thumbnails.medium || item.snippet.thumbnails.default || {}).url
+    })).filter(item=>/^[A-Za-z0-9_-]{11}$/.test(item.id||'')).slice(0,12);
+    if(ytSearchCache.size>300) ytSearchCache.clear();
+    ytSearchCache.set(cacheKey,{items,expires:now+15*60*1000});
+    return respond(res,200,{status:'ok',source:'youtube',items});
+  } catch(err) {
+    // Do not leak API keys, query URLs, or upstream error bodies.
+    return respond(res,502,{status:'failure',error:'YT search network error. Try again.'});
+  } finally {clearTimeout(timer);}
+}
+
 function serveStatic(req,res,url) {
   if (!ALLOWED_METHODS.has(req.method)) return respond(res,405,{status:'failure',error:'Method not allowed'});
   let pathname;
@@ -101,6 +168,7 @@ const server=http.createServer((req,res)=>{
   try {url=new URL(req.url,`http://${req.headers.host||'localhost'}`);}
   catch{return respond(res,400,{status:'failure',error:'Bad URL'});}
   if(url.pathname==='/health') return respond(res,200,{status:'ok',service:'Jotify Web'});
+  if(url.pathname==='/api/yt/search') return void ytSearch(req,res,url);
   if(url.pathname==='/api.php') return void relay(req,res,url);
   serveStatic(req,res,url);
 });
