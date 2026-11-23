@@ -370,7 +370,7 @@ main{padding:26px clamp(15px,3vw,36px) 72px;max-width:1750px;margin:auto}
     const bottom=window.innerWidth<690?84:24;
     document.documentElement.style.setProperty('--mini-bottom',bottom+'px');
     miniControls.style.width=width+'px';
-    miniControls.style.bottom=(bottom+width*9/16)+'px';
+    miniControls.style.bottom=(bottom+Math.max(200,width*9/16))+'px';
   }
   function showHome(updateHistory){
     if(!selected || !frame.getAttribute('src')){window.location.assign('/');return;}
