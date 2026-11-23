@@ -133,7 +133,22 @@ async function ytSearch(req, res, url) {
         ? body.error.details.find(d => typeof d?.reason === 'string')
         : null;
       const reason = String(detail?.reason || body?.error?.errors?.[0]?.reason || body?.error?.status || 'unknown');
-      console.warn('[YT search] rejected:', upstream.status, reason, 'kind:', kind);
+      // Return only a sanitized Google error identifier and a curated hint; never upstream
+      // error message, request URL, API key, project ID, or other sensitive metadata.
+      const safeReason = /^[A-Za-z0-9_.-]{1,64}$/.test(reason) ? reason : 'unknown';
+      const googleMessage = String(body?.error?.message || '').toLowerCase();
+      let hint = 'Check that the active Render key belongs to the same project where YouTube Data API v3 is enabled.';
+      if (/quota|daily limit|rate limit/.test(googleMessage))
+        hint = 'Google reports a quota or rate limit problem. Check YouTube Data API quotas.';
+      else if (/has not been used|is disabled|not enabled|service_disabled/.test(googleMessage))
+        hint = 'Enable YouTube Data API v3 in the Google Cloud project that owns this API key.';
+      else if (/referer|referrer|ip address|application restrictions/.test(googleMessage))
+        hint = 'Key application restrictions are blocking requests from the Render backend.';
+      else if (/invalid api key|api key not valid|key expired/.test(googleMessage))
+        hint = 'Google rejects the API key. Replace it with a newly created server-side key.';
+      else if (/api key|service usage|permission|access denied/.test(googleMessage))
+        hint = 'Check Google Cloud credentials, API restrictions, project permissions and YouTube Data API status.';
+      console.warn('[YT search] rejected:', upstream.status, safeReason, 'kind:', kind);
       const code = reason.toUpperCase();
       let message = 'YouTube API request failed. Check Google Cloud API settings.';
       let httpStatus = 502;
@@ -159,7 +174,7 @@ async function ytSearch(req, res, url) {
         message = 'Google denied this request. Verify the key, restrictions, and YouTube Data API v3.';
         httpStatus = 403;
       }
-      return respond(res, httpStatus, { status: 'failure', error: message, upstreamStatus: upstream.status });
+      return respond(res, httpStatus, { status: 'failure', error: message, upstreamStatus: upstream.status, googleReason: safeReason, diagnosticHint: hint });
     }
     const items = (Array.isArray(body.items) ? body.items : []).map(item => ({
       kind,
